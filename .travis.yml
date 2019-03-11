@@ -1,0 +1,27 @@
+language: python
+python:
+  - '3.5'
+  - '3.6'
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
+# env:
+#   - TO_RUN=TESTS
+#   - TO_RUN=BUILD
+# notifications:
+#   email:
+#     on_success: change
+#     on_failure: always
+before_install:
+  - pip install -U pip
+  - pip install -U pytest
+  - pip install codecov
+install:
+       pip install ".[test]" 
+script:
+  - pytest
+  - codecov
+# after_success:
+  # - codecov
