@@ -1,2 +1,3 @@
 include versioneer.py
 include skift/_version.py
+include stationarizer/_version.py
