@@ -25,7 +25,6 @@ Installation
 Features
 ========
 
-* Adheres to the ``scikit-learn`` transformer API; i.e. implementing ``fit``, ``transform`` and ``fit_transform``.
 * Plays nice with ``pandas.DataFrame`` inputs.
 * Pure python.
 * Supports Python 3.5+.
@@ -34,6 +33,14 @@ Features
 
 Use
 ===
+
+
+Methodology
+===========
+
+
+
+
 
 Contributing
 ============

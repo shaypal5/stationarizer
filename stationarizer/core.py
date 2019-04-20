@@ -18,24 +18,33 @@ from .util import (
 # use a p-value of 1% as default
 # we should consider an adaptive p-value that dependes on the number of
 # variables to deal with the multiple hypothesis testing problem
-DEF_PVAL_STATIONARITY = 0.01
+DEF_PVAL_STATIONARITY = 0.05
 H0 = 'H0 - The null hypothesis was not rejected; the series is NOT stationary.'
 H1 = 'H1 - The null hypothesis was rejected; the series is stationary.'
 
 
-def auto_stationarize_dataframe(df, verbosity=None):
+def auto_stationarize_dataframe(df, verbosity=None, multitest=None):
     """Auto-stationarize the given time-series dataframe.
 
     Parameters
     ----------
     df : pandas.DataFrame
         A dataframe composed solely of numeric columns.
-    verbosity : int, logging.Logger
-        If an int is given, it is interpreted as a level of verbosity: 0 means
-        silent, 1 prints important information and 2 leads to very verbose
-        prints. If a logging.Logger object is given, it is used for printing
-        instead, with appropriate logging levels.
-    """
+    verbosity : int, logging.Logger, optional
+        If an int is given, it is interpreted as the logging lever to use. See
+        https://docs.python.org/3/library/logging.html#levels for details. If a
+        logging.Logger object is given, it is used for printing instead, with
+        appropriate logging levels. If no value is provided, the default
+        logging.Logger behaviour is used.
+    alpha : int, optional
+        Family-wise error rate (FWER) or false discovery rate (FDR), depending
+        on the method used for multiple hypothesis testing error control. If no
+        value is provided, a default value of 0.05 (5%) is used.
+    multitest : str, optional
+        The multiple hypothesis testing eror control method to use. If no value
+        is provided, the Benjamini–Yekutieli is used. See
+        `the documentation of statsmodels' multipletests method for supported values <https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html>`.
+        """  # noqa: E501
     if verbosity is not None:
         prev_verbosity = set_verbosity_level(verbosity)
 
@@ -76,14 +85,15 @@ def auto_stationarize_dataframe(df, verbosity=None):
 
     # check for stationarity
     logger.info((
-        "Checking for stationarity of the input time series using the "
-        "Augmented Dicky-Fuller test with a p-value of "
+        "Checking for the presence of a unit root in the input time series "
+        "using the Augmented Dicky-Fuller test with a p-value of "
         f"{DEF_PVAL_STATIONARITY}"))
     logger.info((
         "Reminder:\n "
         "Null Hypothesis: The series has a unit root (value of a =1); meaning,"
         " it is NOT stationary.\n"
-        "Alternate Hypothesis: The series has no unit root; it is stationary."
+        "Alternate Hypothesis: The series has no unit root; it is either "
+        "stationary or non-stationary of a different model than unit root."
     ))
     results = {}
     num_non_stationary_found = 0
