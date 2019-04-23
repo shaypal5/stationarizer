@@ -28,7 +28,6 @@ Features
 * Plays nice with ``pandas.DataFrame`` inputs.
 * Pure python.
 * Supports Python 3.5+.
-* Fully tested.
 
 
 Use
@@ -39,6 +38,13 @@ Methodology
 ===========
 
 
+Currently only the following simple flow - dealing with unit roots - is implemented:
+
+* Data validation is performed: all columns are checked to be numeric, and the time dimension is assumed to be larger than the number of series (although this is not mandatory, and so only a warning is thrown in case of violation).
+* The Augmented Dickey-Fuller unit root test is performed for each of the series.
+* The p-values of all tests are corrected to control the false discovery rate (FDR) at some given level, using the Benjamini–Yekutieli procedure.
+* For each time series for which the null hypothesis (which is that the series contains a unit root) was not rejected, the series is diffentiated.
+* If any series was diffrentiated, then any un-diffrentiated time series (if any) are trimmed by one step to match the resulting series length.
 
 
 
