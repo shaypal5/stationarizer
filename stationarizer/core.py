@@ -1,9 +1,16 @@
 """Core stationarizer functionalities."""
 
-import pprint
+# import pprint
+# import pandas as pd
 
 import numpy as np
-from statsmodels.tsa.stattools import adfuller
+from statsmodels.tsa.stattools import (
+    adfuller,
+    kpss,
+    detrend,
+)
+from statsmodels.tsa.statespace.tools import diff
+from statsmodels.stats.multitest import multipletests
 try:
     from sklearn.base import TransformerMixin  # noqa: F401
 except ImportError:
@@ -18,12 +25,52 @@ from .util import (
 # use a p-value of 1% as default
 # we should consider an adaptive p-value that dependes on the number of
 # variables to deal with the multiple hypothesis testing problem
-DEF_PVAL_STATIONARITY = 0.05
-H0 = 'H0 - The null hypothesis was not rejected; the series is NOT stationary.'
-H1 = 'H1 - The null hypothesis was rejected; the series is stationary.'
+DEF_ALPHA = 0.05
+H0 = 'H0 - The null hypothesis is that the series has a unit root.'
+H1 = 'H1 - The alternative hypothesis is that the series has no unit root.'
+
+ADF_H0_REJECTED = 'H0 was rejected; it is UNlikely the series has a unit root.'
+ADF_H0_KEPT = 'H0 cannot be rejected; it is likely the series has a unit root.'
+KPSS_H0_REJECTED = 'H0 was rejected; it is likely the series has a unit root.'
+KPSS_H0_KEPT = (
+    'H0 cannot be reject; it is likely the series is trend stationary')
 
 
-def auto_stationarize_dataframe(df, verbosity=None, multitest=None):
+class SimpleConclusion(object):
+    CONTRADICTION = ("Contradictory results regarding the existence of unit"
+                     " root. Various possible reasons exist.")
+    NO_REJECTION = "Not enough proof to reject both null hypothesis."
+    TREND_STATIONARY = ("The likely does not have a unit root, but rather"
+                        " is trend stationary.")
+    UNIT_ROOT = "The series likely has a unit root."
+
+
+class Transformation(object):
+    DIFFRENTIATE = "Diffrentiate"
+    DETREND = "Detrend"
+
+
+CONCLUSION_TO_TRANSFORMATIONS = {
+    SimpleConclusion.CONTRADICTION: [Transformation.DIFFRENTIATE],
+    SimpleConclusion.NO_REJECTION: [
+        Transformation.DETREND, Transformation.DIFFRENTIATE],
+    SimpleConclusion.TREND_STATIONARY: [Transformation.DETREND],
+    SimpleConclusion.UNIT_ROOT: [Transformation.DIFFRENTIATE],
+}
+
+
+def conclude_adf_and_kpss_results(adf_reject, kpss_reject):
+    if adf_reject and kpss_reject:
+        return SimpleConclusion.CONTRADICTION
+    if adf_reject and not kpss_reject:
+        return SimpleConclusion.TREND_STATIONARY
+    if not adf_reject and kpss_reject:
+        return SimpleConclusion.UNIT_ROOT
+    # if we're here, both H0 cannot be rejected
+    return SimpleConclusion.NO_REJECTION
+
+
+def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None):
     """Auto-stationarize the given time-series dataframe.
 
     Parameters
@@ -47,6 +94,8 @@ def auto_stationarize_dataframe(df, verbosity=None, multitest=None):
         """  # noqa: E501
     if verbosity is not None:
         prev_verbosity = set_verbosity_level(verbosity)
+    if alpha is None:
+        alpha = DEF_ALPHA
 
     logger.info("Starting to auto-stationarize a dataframe!")
     logger.info("Starting to check input data validity...")
@@ -68,54 +117,111 @@ def auto_stationarize_dataframe(df, verbosity=None, multitest=None):
     all_cols_numeric = all([np.issubdtype(x, np.number) for x in df.dtypes])
     if not all_cols_numeric:
         err = ValueError(
-            "All columns of poseidon's input csv must be numeric!")
-        logger.exception(err)
-    # assert all columns are of integer data
-    all_cols_int = all([np.issubdtype(x, np.int) for x in df.dtypes])
-    if not all_cols_int:
-        logger.warning((
-            "poseidon input data is assumed to be integer. Non-integer numeric"
-            " data was found. Attempting to cast data to integers..."))
-        try:
-            df = df.astype(int)
-        except ValueError as e:
-            err = ValueError(
-                "Casting poseidon input data to int dtype failed!", e)
+            "All columns of stationarizer's input dataframe must be numeric!")
         logger.exception(err)
 
-    # check for stationarity
+    # util var
+    n = len(df.columns)
+
+    # testing for unit root
     logger.info((
         "Checking for the presence of a unit root in the input time series "
-        "using the Augmented Dicky-Fuller test with a p-value of "
-        f"{DEF_PVAL_STATIONARITY}"))
+        "using the Augmented Dicky-Fuller test"))
     logger.info((
         "Reminder:\n "
-        "Null Hypothesis: The series has a unit root (value of a =1); meaning,"
+        "Null Hypothesis: The series has a unit root (value of a=1); meaning,"
         " it is NOT stationary.\n"
         "Alternate Hypothesis: The series has no unit root; it is either "
         "stationary or non-stationary of a different model than unit root."
     ))
-    results = {}
-    num_non_stationary_found = 0
+    adf_results = []
     for colname in df.columns:
         srs = df[colname]
         result = adfuller(srs)
-        if result[1] <= DEF_PVAL_STATIONARITY:  # then we reject H0 (null hypo)
-            result['decision'] = H1
-        else:
-            result['decision'] = H0
-            num_non_stationary_found += 1
-    if num_non_stationary_found > 0:
-        logger.warning(
-            f"{num_non_stationary_found} non-stationary time series found!")
-    logger.info(
-            f"{num_non_stationary_found} non-stationary time series found.")
-    non_str_ratio = 100 * (num_non_stationary_found / len(df.columns))
-    logger.info(
-        f"{non_str_ratio}% of input time series are non-stationary.")
-    logger.info(pprint.pformat(results, indent=4))
+        logger.info((
+            f"{colname}: test statistic={result[0]}, p-val={result[1]}."))
+        adf_results.append(result)
+
+    # testing for trend stationarity
+    logger.info((
+        "Testing for trend stationarity of input series using the KPSS test."))
+    logger.info((
+        "Reminder:\n"
+        "Null Hypothesis (H0): The series is trend-stationarity.\n"
+        "Alternative Hypothesis (H1): The series has a unit root."
+    ))
+    kpss_results = []
+    for colname in df.columns:
+        srs = df[colname]
+        result = kpss(srs)
+        logger.info((
+            f"{colname}: test statistic={result[0]}, p-val={result[1]}."))
+        kpss_results.append(result)
+
+    # Controling FDR
+    print((
+        "Controling the False Discovery Rate (FDR) using the Benjamini-"
+        f"Yekutieli procedure with α={DEF_ALPHA}."
+    ))
+    adf_pvals = [x[1] for x in adf_results]
+    kpss_pvals = [x[1] for x in kpss_results]
+    pvals = adf_pvals + kpss_pvals
+    by_res = multipletests(
+        pvals=pvals,
+        alpha=alpha,
+        method='fdr_by',
+        is_sorted=False,
+    )
+    reject = by_res[0]
+    corrected_pvals = by_res[1]
+    adf_rejections = reject[:n]
+    kpss_rejections = reject[n:]
+    adf_corrected_pvals = corrected_pvals[:n]  # noqa: F841
+    kpss_corrected_pvals = corrected_pvals[n:]  # noqa: F841
+    conclusion_counts = {}
+
+    def dict_inc(dicti, key):
+        try:
+            dicti[key] += 1
+        except KeyError:
+            dicti[key] = 1
+
+    # interpret results
+    print("Interpreting test results after FDR control...")
+    conclusions = {}
+    actions = {}
+    for i, colname in enumerate(df.columns):
+        conclusion = conclude_adf_and_kpss_results(
+            adf_reject=adf_rejections[i], kpss_rejct=kpss_rejections[i])
+        dict_inc(conclusion_counts, conclusion)
+        trans = CONCLUSION_TO_TRANSFORMATIONS[conclusion]
+        conclusions[colname] = conclusion
+        actions[colname] = trans
+        logger.info((
+            f"--{colname}--\n "
+            "ADF corrected p-val: {adf_corrected_pvals[i]}, "
+            "H0 rejected: {adf_rejections[i]}.\n"
+            "KPSS corrected p-val: {kpss_corrected_pvals[i]}, "
+            "H0 rejected: {kpss_rejections[i]}.\n"
+            f"Conclusion: {conclusion}\n Transformations: {trans}."))
 
     # making non stationary series stationary!
+    postdf = df.copy()
+    print("Applying transformations...")
+    for i, colname in enumerate(df.columns):
+        srs = df[colname]
+        if Transformation.DETREND in actions[colname]:
+            srs = detrend(srs, order=1, axis=0)
+        if Transformation.DIFFRENTIATE in actions[colname]:
+            srs = diff(srs, k_diff=1)
+        postdf[colname] = srs
+
+    for k in conclusion_counts:
+        count = conclusion_counts[k]
+        ratio = 100 * (count / len(df.columns))
+        logger.info(f"{count} series ({ratio}%) found with conclusion: {k}.")
 
     if verbosity is not None:
         set_verbosity_level(prev_verbosity)
+
+    return postdf
