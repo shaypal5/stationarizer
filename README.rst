@@ -6,8 +6,8 @@ Smart, automatic detection and stationarization of non-stationary time series da
 
 .. code-block:: python
 
-  >>> from stationarizer import auto_stationarize
-  >>> auto_stationarize(my_dataframe)
+  >>> from stationarizer import simple_auto_stationarize
+  >>> simple_auto_stationarize(my_dataframe)
 
 .. contents::
 
@@ -32,6 +32,19 @@ Features
 
 Use
 ===
+
+Simple auto-stationarization
+----------------------------
+
+The only stationarization pipeline implemented is ``simple_auto_stationarize``, which can be called with:
+
+.. code-block:: python
+
+  >>> from stationarizer import simple_auto_stationarize
+  >>> stationarized_df = simple_auto_stationarize(my_dataframe)
+
+
+The level to which false discovery rate (FDR) is controled can be configured with the ``alpha`` parameter, while the method for multitest error control can be configured with ``multitest`` (changing this can change ``alpha`` to control for FWER instead).
 
 
 Methodology

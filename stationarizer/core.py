@@ -1,8 +1,5 @@
 """Core stationarizer functionalities."""
 
-# import pprint
-# import pandas as pd
-
 import numpy as np
 from statsmodels.tsa.stattools import (
     adfuller,
