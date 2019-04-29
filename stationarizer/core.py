@@ -202,16 +202,25 @@ def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None):
             "H0 rejected: {kpss_rejections[i]}.\n"
             f"Conclusion: {conclusion}\n Transformations: {trans}."))
 
-    # making non stationary series stationary!
-    postdf = df.copy()
+    # making non-stationary series stationary!
+    post_cols = {}
     print("Applying transformations...")
-    for i, colname in enumerate(df.columns):
+    for colname in df.columns:
         srs = df[colname]
         if Transformation.DETREND in actions[colname]:
             srs = detrend(srs, order=1, axis=0)
         if Transformation.DIFFRENTIATE in actions[colname]:
             srs = diff(srs, k_diff=1)
-        postdf[colname] = srs
+        post_cols[colname] = srs
+
+    # equalizing lengths
+    min_len = min([len(x) for x in post_cols])
+    for colname in df.columns:
+        post_cols[colname] = post_cols[colname][:min_len]
+    postdf = df.copy()
+    postdf = postdf.iloc[:min_len]
+    for colname in df.columns:
+        postdf[colname] = post_cols[colname]
 
     for k in conclusion_counts:
         count = conclusion_counts[k]
