@@ -4,14 +4,10 @@ import numpy as np
 from statsmodels.tsa.stattools import (
     adfuller,
     kpss,
-    detrend,
 )
+from statsmodels.tsa.tsatools import detrend
 from statsmodels.tsa.statespace.tools import diff
 from statsmodels.stats.multitest import multipletests
-try:
-    from sklearn.base import TransformerMixin  # noqa: F401
-except ImportError:
-    pass
 
 from .util import (
     set_verbosity_level,
@@ -59,15 +55,16 @@ CONCLUSION_TO_TRANSFORMATIONS = {
 def conclude_adf_and_kpss_results(adf_reject, kpss_reject):
     if adf_reject and kpss_reject:
         return SimpleConclusion.CONTRADICTION
-    if adf_reject and not kpss_reject:
+    if adf_reject and (not kpss_reject):
         return SimpleConclusion.TREND_STATIONARY
-    if not adf_reject and kpss_reject:
+    if (not adf_reject) and kpss_reject:
         return SimpleConclusion.UNIT_ROOT
     # if we're here, both H0 cannot be rejected
     return SimpleConclusion.NO_REJECTION
 
 
-def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None):
+def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None,
+                             get_conclusions=False, get_actions=False):
     """Auto-stationarize the given time-series dataframe.
 
     Parameters
@@ -87,8 +84,24 @@ def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None):
     multitest : str, optional
         The multiple hypothesis testing eror control method to use. If no value
         is provided, the Benjamini–Yekutieli is used. See
-        `the documentation of statsmodels' multipletests method for supported values <https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html>`.
-        """  # noqa: E501
+        `the documesimple_auto_stationarizentation of statsmodels' multipletests method for supported values <https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html>`.
+    get_conclusions : bool, defaults to False
+        If set to true, a conclusions dict is returned.
+    get_actions : bool, defaults to False
+        If set to true, an actions dict is returned.
+
+    Returns
+    -------
+    results : pandas.DataFrame or dict
+        By default, only he transformed dataframe is returned. However, if
+        get_conclusions or get_actions are set to True, a dict is returned
+        instead, with the following mappings:
+        - `postdf` - Maps to the transformed dataframe.
+        - `conclusions` - Maps to a dict mapping each column name to the
+          arrived conclusion regarding its stationarity.
+        - `actions` - Maps to a dict mapping each column name to the
+          transformations performed on it to stationarize it.
+    """  # noqa: E501
     if verbosity is not None:
         prev_verbosity = set_verbosity_level(verbosity)
     if alpha is None:
@@ -134,7 +147,7 @@ def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None):
     adf_results = []
     for colname in df.columns:
         srs = df[colname]
-        result = adfuller(srs)
+        result = adfuller(srs, regression='ct')
         logger.info((
             f"{colname}: test statistic={result[0]}, p-val={result[1]}."))
         adf_results.append(result)
@@ -150,13 +163,13 @@ def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None):
     kpss_results = []
     for colname in df.columns:
         srs = df[colname]
-        result = kpss(srs)
+        result = kpss(srs, regression='ct')
         logger.info((
             f"{colname}: test statistic={result[0]}, p-val={result[1]}."))
         kpss_results.append(result)
 
     # Controling FDR
-    print((
+    logger.info((
         "Controling the False Discovery Rate (FDR) using the Benjamini-"
         f"Yekutieli procedure with α={DEF_ALPHA}."
     ))
@@ -184,27 +197,27 @@ def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None):
             dicti[key] = 1
 
     # interpret results
-    print("Interpreting test results after FDR control...")
+    logger.info("Interpreting test results after FDR control...")
     conclusions = {}
     actions = {}
     for i, colname in enumerate(df.columns):
         conclusion = conclude_adf_and_kpss_results(
-            adf_reject=adf_rejections[i], kpss_rejct=kpss_rejections[i])
+            adf_reject=adf_rejections[i], kpss_reject=kpss_rejections[i])
         dict_inc(conclusion_counts, conclusion)
         trans = CONCLUSION_TO_TRANSFORMATIONS[conclusion]
         conclusions[colname] = conclusion
         actions[colname] = trans
         logger.info((
             f"--{colname}--\n "
-            "ADF corrected p-val: {adf_corrected_pvals[i]}, "
-            "H0 rejected: {adf_rejections[i]}.\n"
-            "KPSS corrected p-val: {kpss_corrected_pvals[i]}, "
-            "H0 rejected: {kpss_rejections[i]}.\n"
+            f"ADF corrected p-val: {adf_corrected_pvals[i]}, "
+            f"H0 rejected: {adf_rejections[i]}.\n"
+            f"KPSS corrected p-val: {kpss_corrected_pvals[i]}, "
+            f"H0 rejected: {kpss_rejections[i]}.\n"
             f"Conclusion: {conclusion}\n Transformations: {trans}."))
 
     # making non-stationary series stationary!
     post_cols = {}
-    print("Applying transformations...")
+    logger.info("Applying transformations...")
     for colname in df.columns:
         srs = df[colname]
         if Transformation.DETREND in actions[colname]:
@@ -230,4 +243,11 @@ def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None):
     if verbosity is not None:
         set_verbosity_level(prev_verbosity)
 
-    return postdf
+    if not get_actions and not get_conclusions:
+        return postdf
+    results = {'postdf': postdf}
+    if get_conclusions:
+        results['conclusions'] = conclusions
+    if get_actions:
+        results['actions'] = actions
+    return results

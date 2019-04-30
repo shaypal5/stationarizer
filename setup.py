@@ -8,14 +8,14 @@ import versioneer
 
 
 INSTALL_REQUIRES = [
+    'strct',
     'numpy',
-    'scipy',
-    'scikit-learn',
+    'statsmodels',
 ]
 
 TEST_REQUIRES = [
     # testing and coverage
-    'pytest', 'coverage', 'pytest-cov',
+    'pytest', 'coverage', 'pytest-cov', 'pytest-print',
     # unmandatory dependencies of the package itself
     'pandas',
     # to be able to run `python setup.py checkdocs`
