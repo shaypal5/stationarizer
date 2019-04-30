@@ -59,9 +59,9 @@ Currently only the following simple flow - dealing with unit roots - is implemen
 * Both the Augmented Dickey-Fuller unit root test and the KPSS test are performed for each of the series.
 * The p-values of all tests are corrected to control the false discovery rate (FDR) at some given level, using the Benjamini–Yekutieli procedure.
 * The joint ADF-KPSS results are interpreted for each test.
-* For each time series for which the null hypothesis (which is that the series contains a unit root) was not rejected, the series is diffentiated.
+* For each time series for which the presence of a unit root cannot be rejected, the series is diffentiated.
+* For each time series for which the presence of a trend cannot be rejected, the series is de-trended.
 * If any series was diffrentiated, then any un-diffrentiated time series (if any) are trimmed by one step to match the resulting series length.
-
 
 
 Contributing
