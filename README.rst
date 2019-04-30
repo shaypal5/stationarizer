@@ -1,6 +1,6 @@
 stationarizer ෴
 ###############
-.. |PyPI-Status| |PyPI-Versions| |Build-Status| |Codecov| |LICENCE|
+|PyPI-Status| |PyPI-Versions| |Build-Status| |Codecov| |LICENCE|
 
 Smart, automatic detection and stationarization of non-stationary time series data.
 
