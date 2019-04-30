@@ -10,6 +10,7 @@ import versioneer
 INSTALL_REQUIRES = [
     'strct',
     'numpy',
+    'scipy',
     'statsmodels',
 ]
 
