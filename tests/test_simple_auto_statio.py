@@ -43,7 +43,7 @@ def _get_correct_action_ratio(actions):
     return good / 4
 
 
-def test_simple_autostatio(printer):
+def test_simple_autostatio():
     success_rates = []
     correct_action_rates = []
     conclusion_rates = {}
