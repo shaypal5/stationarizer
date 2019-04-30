@@ -27,7 +27,7 @@ Features
 
 * Plays nice with ``pandas.DataFrame`` inputs.
 * Pure python.
-* Supports Python 3.5+.
+* Supports Python 3.6+.
 
 
 Use
