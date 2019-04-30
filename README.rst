@@ -50,6 +50,8 @@ The level to which false discovery rate (FDR) is controled can be configured wit
 Methodology
 ===========
 
+Simple auto-stationarization
+----------------------------
 
 Currently only the following simple flow - dealing with unit roots - is implemented:
 

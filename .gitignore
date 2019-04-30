@@ -104,3 +104,6 @@ tags
 
 # osx
 .DS_Store
+
+# kite
+kite-vim.log
