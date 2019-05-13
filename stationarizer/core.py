@@ -110,6 +110,7 @@ def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None,
     logger = get_logger()
     logger.info("Starting to auto-stationarize a dataframe!")
     logger.info("Starting to check input data validity...")
+    logger.info(f"Data shape (time, variables) is {df.shape}.")
     # the first axis - rows - is expected to represent the time dimension,
     # while the second axis - columns - is expected to represent variables;
     # thus, the first expected to be much longer than the second
@@ -235,6 +236,7 @@ def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None,
     postdf = postdf.iloc[:min_len]
     for colname in df.columns:
         postdf[colname] = post_cols[colname]
+    logger.info(f"Post transformation shape: {postdf.shape}")
 
     for k in conclusion_counts:
         count = conclusion_counts[k]
