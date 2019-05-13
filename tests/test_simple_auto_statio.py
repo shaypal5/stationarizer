@@ -71,6 +71,7 @@ def test_simple_autostatio():
         conclusions = results['conclusions']
         actions = results['actions']
         assert len(postdf.columns) == len(df.columns)
+        assert len(postdf) >= len(df) - 1
         for i in range(len(postdf.columns)):
             assert postdf.dtypes[i] == df.dtypes[i]
         successes = 0

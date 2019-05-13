@@ -223,13 +223,16 @@ def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None,
     for colname in df.columns:
         srs = df[colname]
         if Transformation.DETREND in actions[colname]:
+            logger.info(f"Detrending {colname} (len={len(srs)}).")
             srs = detrend(srs, order=1, axis=0)
         if Transformation.DIFFRENTIATE in actions[colname]:
+            logger.info(f"Diffrentiating {colname} (len={len(srs)}).")
             srs = diff(srs, k_diff=1)
         post_cols[colname] = srs
+        logger.info(f"{colname} transformed (len={len(post_cols[colname])}).")
 
     # equalizing lengths
-    min_len = min([len(x) for x in post_cols])
+    min_len = min([len(post_cols[x]) for x in post_cols])
     for colname in df.columns:
         post_cols[colname] = post_cols[colname][:min_len]
     postdf = df.copy()
