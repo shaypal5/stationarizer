@@ -11,7 +11,7 @@ from statsmodels.stats.multitest import multipletests
 
 from .util import (
     set_verbosity_level,
-    LOGGER as logger,
+    get_logger,
 )
 
 
@@ -107,6 +107,7 @@ def simple_auto_stationarize(df, verbosity=None, alpha=None, multitest=None,
     if alpha is None:
         alpha = DEF_ALPHA
 
+    logger = get_logger()
     logger.info("Starting to auto-stationarize a dataframe!")
     logger.info("Starting to check input data validity...")
     # the first axis - rows - is expected to represent the time dimension,

@@ -28,3 +28,7 @@ def set_verbosity_level(verbosity_level):
         raise TypeError((
             "Valid types for the verbosity argument are int and logging.Logger"
             " only!"))
+
+
+def get_logger():
+    return LOGGER
