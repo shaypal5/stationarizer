@@ -244,6 +244,8 @@ def simple_auto_stationarize(
         )
 
     # making non-stationary series stationary!
+    logger.info(f"Pre-transformation shape: {df.shape}")
+    logger.info(f"# of NA: {df.isna().sum().sum()}")
     post_cols = {}
     logger.info("Applying transformations...")
     for colname in df.columns:
@@ -272,6 +274,7 @@ def simple_auto_stationarize(
     for colname in df.columns:
         postdf[colname] = post_cols[colname]
     logger.info(f"Post transformation shape: {postdf.shape}")
+    logger.info(f"# of NA: {postdf.isna().sum().sum()}")
 
     for k in conclusion_counts:
         count = conclusion_counts[k]
