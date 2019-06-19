@@ -1,9 +1,18 @@
 """Utility functions for stationarizer."""
 
+import os
 import logging
 
+try:
+    import logzero
 
-LOGGER = logging.getLogger("stationarizer")
+    LOG_FPATH = os.path.expanduser("~/.stationarizer/test.log")
+    os.makedirs(os.path.expanduser("~/.stationarizer"), exist_ok=True)
+    LOGGER = logzero.setup_logger("stationarizer")
+    LOGGER.info("logzero-based logger setup")
+except ImportError:
+    LOGGER = logging.getLogger("stationarizer")
+LOGGER.setLevel(logging.WARNING)
 
 
 def set_verbosity_level(verbosity_level):
@@ -25,9 +34,9 @@ def set_verbosity_level(verbosity_level):
         LOGGER = verbosity_level
         return verbosity_level
     else:
-        raise TypeError((
-            "Valid types for the verbosity argument are int and logging.Logger"
-            " only!"))
+        raise TypeError(
+            "Valid types for verbosity param: int, logging.Logger only!"
+        )
 
 
 def get_logger():

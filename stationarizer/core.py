@@ -1,6 +1,7 @@
 """Core stationarizer functionalities."""
 
 import numpy as np
+import pandas as pd
 from statsmodels.tsa.stattools import adfuller, kpss
 from statsmodels.tsa.tsatools import detrend
 from statsmodels.tsa.statespace.tools import diff
@@ -257,30 +258,40 @@ def simple_auto_stationarize(
         if Transformation.DETREND in actions[colname]:
             logger.info(f"Detrending {colname} (len={len(srs)}).")
             srs = detrend(srs, order=1, axis=0)
-            logger.info(f"# NaN after detrending: {np.isnan(srs).sum()}")
+            logger.debug(f"# NaN after detrending: {np.isnan(srs).sum()}")
         if Transformation.DIFFRENTIATE in actions[colname]:
             logger.info(f"Diffrentiating {colname} (len={len(srs)}).")
             srs = diff(srs, k_diff=1)
-            logger.info(f"# NaN after diffrencing: {np.isnan(srs).sum()}")
+            logger.debug(f"# NaN after diffrencing: {np.isnan(srs).sum()}")
         post_cols[colname] = srs
         logger.info(f"{colname} transformed (len={len(post_cols[colname])}).")
 
     # equalizing lengths
     min_len = min([len(post_cols[x]) for x in post_cols])
+    logger.info(f"Min length to trim to: {min_len}")
+    trimmed_cols = {}
     for colname in df.columns:
-        post_cols[colname] = post_cols[colname][:min_len]
-    postdf = df.copy()
-    postdf = postdf.iloc[:min_len]
-    for colname in df.columns:
-        postdf[colname] = post_cols[colname]
+        col = post_cols[colname][:min_len].values
+        trimmed_cols[colname] = col
+        logger.debug(
+            f"#NA trimmed {colname} (len={len(col)}): {np.isnan(col).sum()}"
+        )
+    postdf = pd.DataFrame.from_dict(trimmed_cols)
+    # postdf = postdf[:min_len]
+    logger.debug(f"trimmed df shape: {postdf.shape}")
+    postdf.index = df.index.copy()[:min_len]
+    # postdf = df.copy()
+    # postdf = postdf.iloc[:min_len]
+    # for colname in df.columns:
+    #     postdf[colname] = post_cols[colname]
     logger.info(f"Post trimming shape: {postdf.shape}")
 
     # checking for NaNs
     nan_count = postdf.isna().sum().sum()
     if nan_count > 0:
         nan_rows = postdf[postdf.isna().any(axis=1)]
-        logger.info(f"Post trimming NaN count: {nan_count}")
-        logger.info(f"Rows with Nan values:\n {nan_rows}")
+        logger.debug(f"Post trimming NaN count: {nan_count}")
+        logger.debug(f"Rows with Nan values:\n {nan_rows}")
 
     for k in conclusion_counts:
         count = conclusion_counts[k]

@@ -1,11 +1,14 @@
 """Testing the simple auto-stationarizing flow."""
 
+import logging
+
 import numpy as np
 import pandas as pd
 from strct.dicts import increment_nested_val
 
 from stationarizer import simple_auto_stationarize
 from stationarizer.core import SimpleConclusion, Transformation
+from stationarizer.util import set_verbosity_level
 
 from .stochastic_process_generators import (
     unit_root_process,
@@ -43,6 +46,7 @@ def _get_correct_action_ratio(actions):
 
 
 def test_simple_autostatio():
+    set_verbosity_level(logging.DEBUG)
     success_rates = []
     correct_action_rates = []
     conclusion_rates = {}
@@ -67,7 +71,7 @@ def test_simple_autostatio():
         }
         results = simple_auto_stationarize(
             df=df,
-            verbosity=10,
+            verbosity=logging.DEBUG,
             alpha=None,
             multitest=None,
             get_conclusions=True,
