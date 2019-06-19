@@ -244,8 +244,12 @@ def simple_auto_stationarize(
         )
 
     # making non-stationary series stationary!
-    logger.info(f"Pre-transformation shape: {df.shape}")
-    logger.info(f"# of NA: {df.isna().sum().sum()}")
+    logger.info(
+        (
+            f"Pre-transformation shape: {df.shape}, "
+            f"#NA: {df.isna().sum().sum()}"
+        )
+    )
     post_cols = {}
     logger.info("Applying transformations...")
     for colname in df.columns:
@@ -253,15 +257,11 @@ def simple_auto_stationarize(
         if Transformation.DETREND in actions[colname]:
             logger.info(f"Detrending {colname} (len={len(srs)}).")
             srs = detrend(srs, order=1, axis=0)
-            logger.info(
-                f"# nan values after detrending: {np.isnan(srs).sum()}"
-            )
+            logger.info(f"# NaN after detrending: {np.isnan(srs).sum()}")
         if Transformation.DIFFRENTIATE in actions[colname]:
             logger.info(f"Diffrentiating {colname} (len={len(srs)}).")
             srs = diff(srs, k_diff=1)
-            logger.info(
-                f"# nan values after diffrencing: {np.isnan(srs).sum()}"
-            )
+            logger.info(f"# NaN after diffrencing: {np.isnan(srs).sum()}")
         post_cols[colname] = srs
         logger.info(f"{colname} transformed (len={len(post_cols[colname])}).")
 
@@ -273,8 +273,14 @@ def simple_auto_stationarize(
     postdf = postdf.iloc[:min_len]
     for colname in df.columns:
         postdf[colname] = post_cols[colname]
-    logger.info(f"Post transformation shape: {postdf.shape}")
-    logger.info(f"# of NA: {postdf.isna().sum().sum()}")
+    logger.info(f"Post trimming shape: {postdf.shape}")
+
+    # checking for NaNs
+    nan_count = postdf.isna().sum().sum()
+    if nan_count > 0:
+        nan_rows = postdf[postdf.isna().any(axis=1)]
+        logger.info(f"Post trimming NaN count: {nan_count}")
+        logger.info(f"Rows with Nan values:\n {nan_rows}")
 
     for k in conclusion_counts:
         count = conclusion_counts[k]
