@@ -5,10 +5,7 @@ import pandas as pd
 from strct.dicts import increment_nested_val
 
 from stationarizer import simple_auto_stationarize
-from stationarizer.core import (
-    SimpleConclusion,
-    Transformation,
-)
+from stationarizer.core import SimpleConclusion, Transformation
 
 from .stochastic_process_generators import (
     unit_root_process,
@@ -22,10 +19,10 @@ NUM_EXPERIMENTS = 75
 
 
 class Types(object):
-    GAUSS = 'Gaussian White Noise Process'
-    TREND = 'Trend Stationary Process'
-    UROOT = 'Unit Root Process'
-    TREND_UROOT = 'Trend Stationary Process w/ Unit Root'
+    GAUSS = "Gaussian White Noise Process"
+    TREND = "Trend Stationary Process"
+    UROOT = "Unit Root Process"
+    TREND_UROOT = "Trend Stationary Process w/ Unit Root"
 
 
 def _get_correct_action_ratio(actions):
@@ -33,12 +30,14 @@ def _get_correct_action_ratio(actions):
     if Transformation.DIFFRENTIATE not in actions[Types.GAUSS]:
         good += 1
     if (Transformation.DETREND in actions[Types.TREND]) and (
-            Transformation.DIFFRENTIATE not in actions[Types.TREND]):
+        Transformation.DIFFRENTIATE not in actions[Types.TREND]
+    ):
         good += 1
     if Transformation.DIFFRENTIATE in actions[Types.UROOT]:
         good += 1
     if (Transformation.DETREND in actions[Types.TREND_UROOT]) and (
-            Transformation.DIFFRENTIATE in actions[Types.TREND_UROOT]):
+        Transformation.DIFFRENTIATE in actions[Types.TREND_UROOT]
+    ):
         good += 1
     return good / 4
 
@@ -52,12 +51,14 @@ def test_simple_autostatio():
         trend = trend_stationary(STEPS1, 5)
         uroot = unit_root_process(STEPS1)
         trend_uroot = trend_stationary_unit_root_process(STEPS1)
-        df = pd.DataFrame.from_dict({
-            Types.GAUSS: gauss,
-            Types.TREND: trend,
-            Types.UROOT: uroot,
-            Types.TREND_UROOT: trend_uroot,
-        })
+        df = pd.DataFrame.from_dict(
+            {
+                Types.GAUSS: gauss,
+                Types.TREND: trend,
+                Types.UROOT: uroot,
+                Types.TREND_UROOT: trend_uroot,
+            }
+        )
         expected_conclusions = {
             Types.GAUSS: SimpleConclusion.TREND_STATIONARY,
             Types.TREND: SimpleConclusion.TREND_STATIONARY,
@@ -65,11 +66,16 @@ def test_simple_autostatio():
             Types.TREND_UROOT: SimpleConclusion.NO_REJECTION,
         }
         results = simple_auto_stationarize(
-            df=df, verbosity=10, alpha=None, multitest=None,
-            get_conclusions=True, get_actions=True)
-        postdf = results['postdf']
-        conclusions = results['conclusions']
-        actions = results['actions']
+            df=df,
+            verbosity=10,
+            alpha=None,
+            multitest=None,
+            get_conclusions=True,
+            get_actions=True,
+        )
+        postdf = results["postdf"]
+        conclusions = results["conclusions"]
+        actions = results["actions"]
         assert len(postdf.columns) == len(df.columns)
         assert len(postdf) >= len(df) - 1
         for i in range(len(postdf.columns)):
