@@ -1,6 +1,7 @@
 stationarizer ෴
 ###############
-|PyPI-Status| |PyPI-Versions| |Build-Status| |Codecov| |LICENCE|
+
+|PyPI-Status| |PyPI-Versions| |Build-Status| |Codecov| |Codacy| |Requirements| |LICENCE|
 
 Smart, automatic detection and stationarization of non-stationary time series data.
 
@@ -134,3 +135,11 @@ Created by Shay Palachy (shay.palachy@gmail.com).
 
 .. |Codecov| image:: https://codecov.io/github/shaypal5/stationarizer/coverage.svg?branch=master
    :target: https://codecov.io/github/shaypal5/stationarizer?branch=master
+   
+.. |Codacy| image:: https://api.codacy.com/project/badge/Grade/0f9b14219ae3452da5153efca9df5fbb
+   :alt: Codacy Badge
+   :target: https://app.codacy.com/app/shaypal5/stationarizer?utm_source=github.com&utm_medium=referral&utm_content=shaypal5/stationarizer&utm_campaign=Badge_Grade_Dashboard
+
+.. |Requirements| image:: https://requires.io/github/shaypal5/stationarizer/requirements.svg?branch=master
+     :target: https://requires.io/github/shaypal5/stationarizer/requirements/?branch=master
+     :alt: Requirements Status
