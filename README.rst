@@ -21,7 +21,7 @@ Installation
 .. code-block:: bash
 
   pip install stationarizer
-  
+
 
 Features
 ========
@@ -59,10 +59,14 @@ Currently only the following simple flow - dealing with unit roots - is implemen
 * Data validation is performed: all columns are checked to be numeric, and the time dimension is assumed to be larger than the number of series (although this is not mandatory, and so only a warning is thrown in case of violation).
 * Both the Augmented Dickey-Fuller unit root test and the KPSS test are performed for each of the series.
 * The p-values of all tests are corrected to control the false discovery rate (FDR) at some given level, using the Benjamini–Yekutieli procedure.
-* The joint ADF-KPSS results are interpreted for each test.
+* The joint ADF-KPSS results are interpreted for each test (see image below).
 * For each time series for which the presence of a unit root cannot be rejected, the series is diffentiated.
 * For each time series for which the presence of a trend cannot be rejected, the series is de-trended.
 * If any series was diffrentiated, then any un-diffrentiated time series (if any) are trimmed by one step to match the resulting series length.
+
+Here is how joint ADF-KPSS results are interpreted, per-series:
+
+.. image:: joint_kpss_and_adf.jpg
 
 
 Contributing
@@ -130,12 +134,12 @@ Created by Shay Palachy (shay.palachy@gmail.com).
 
 .. |LICENCE| image:: https://github.com/shaypal5/stationarizer/blob/master/mit_license_badge.svg
   :target: https://github.com/shaypal5/stationarizer/blob/master/LICENSE
-  
+
 .. https://img.shields.io/github/license/shaypal5/stationarizer.svg
 
 .. |Codecov| image:: https://codecov.io/github/shaypal5/stationarizer/coverage.svg?branch=master
    :target: https://codecov.io/github/shaypal5/stationarizer?branch=master
-   
+
 .. |Codacy| image:: https://api.codacy.com/project/badge/Grade/0f9b14219ae3452da5153efca9df5fbb
    :alt: Codacy Badge
    :target: https://app.codacy.com/app/shaypal5/stationarizer?utm_source=github.com&utm_medium=referral&utm_content=shaypal5/stationarizer&utm_campaign=Badge_Grade_Dashboard
